@@ -57,6 +57,7 @@ const orders = [
  */
 function getProductById(products, productId) {
   // 請實作此函式
+  return products.find(product => product.id === productId) || null;
 }
 
 /**
@@ -67,6 +68,11 @@ function getProductById(products, productId) {
  */
 function getProductsByCategory(products, category) {
   // 請實作此函式
+  if (category === '全部') {
+    return products;
+  } else {
+    return products.filter(product => product.category === category);
+  }
 }
 
 /**
@@ -77,6 +83,8 @@ function getProductsByCategory(products, category) {
  */
 function getDiscountRate(product) {
   // 請實作此函式
+  const discountRate = Math.round((product.price / product.origin_price) * 100) / 10;
+  return `${discountRate}折`;
 }
 
 /**
@@ -86,6 +94,8 @@ function getDiscountRate(product) {
  */
 function getAllCategories(products) {
   // 請實作此函式
+  const categories = products.map(product => product.category);
+  return [...new Set(categories)];
 }
 
 // ========================================
@@ -99,6 +109,7 @@ function getAllCategories(products) {
  */
 function calculateCartOriginalTotal(carts) {
   // 請實作此函式
+  return carts.reduce((total, cart) => total + cart.product.origin_price * cart.quantity, 0);
 }
 
 /**
@@ -108,6 +119,10 @@ function calculateCartOriginalTotal(carts) {
  */
 function calculateCartTotal(carts) {
   // 請實作此函式
+  return carts.reduce(
+    (total, cart) => total + cart.product.price * cart.quantity,
+    0,
+  );
 }
 
 /**
@@ -117,6 +132,7 @@ function calculateCartTotal(carts) {
  */
 function calculateSavings(carts) {
   // 請實作此函式
+  return calculateCartOriginalTotal(carts) - calculateCartTotal(carts);
 }
 
 /**
@@ -126,6 +142,7 @@ function calculateSavings(carts) {
  */
 function calculateCartItemCount(carts) {
   // 請實作此函式
+  return carts.reduce((total, cart) => total + cart.quantity, 0);
 }
 
 /**
@@ -136,6 +153,7 @@ function calculateCartItemCount(carts) {
  */
 function isProductInCart(carts, productId) {
   // 請實作此函式
+  return carts.some(cart => cart.product.id === productId);
 }
 
 // ========================================
@@ -152,6 +170,22 @@ function isProductInCart(carts, productId) {
  */
 function addToCart(carts, product, quantity) {
   // 請實作此函式
+  const cartIndex = carts.findIndex(cart => cart.product.id === product.id);
+  if (cartIndex !== -1) {
+    // 產品已存在，合併數量
+    return carts.map((cart, index) => {
+      if (index === cartIndex) {
+        return { ...cart, quantity: cart.quantity + quantity };
+      } else {
+        return cart;
+      }
+    });
+  } else {
+    // 產品不存在，新增一筆
+    const newCartItem = { id: `cart-${Date.now()}`, product, quantity };
+    // 回傳新的購物車陣列
+    return [...carts, newCartItem];
+  }
 }
 
 /**
@@ -163,6 +197,18 @@ function addToCart(carts, product, quantity) {
  */
 function updateCartItemQuantity(carts, cartId, newQuantity) {
   // 請實作此函式
+  if (newQuantity <= 0) {
+    // 新數量小於等於 0，移除該商品
+    return carts.filter(cart => cart.id !== cartId);
+  }
+  // 更新該商品的數量
+  return carts.map(cart => {
+    if (cart.id === cartId) {
+      return { ...cart, quantity: newQuantity };
+    } else {
+      return cart;
+    }
+  });
 }
 
 /**
@@ -173,6 +219,7 @@ function updateCartItemQuantity(carts, cartId, newQuantity) {
  */
 function removeFromCart(carts, cartId) {
   // 請實作此函式
+  return carts.filter(cart => cart.id !== cartId);
 }
 
 /**
@@ -181,6 +228,7 @@ function removeFromCart(carts, cartId) {
  */
 function clearCart() {
   // 請實作此函式
+  return [];
 }
 
 // ========================================
@@ -194,6 +242,13 @@ function clearCart() {
  */
 function calculateTotalRevenue(orders) {
   // 請實作此函式
+  return orders.reduce((total, order) => {
+    if (order.paid) {
+      return total + order.total;
+    } else {
+      return total;
+    }
+  }, 0);
 }
 
 /**
@@ -204,6 +259,7 @@ function calculateTotalRevenue(orders) {
  */
 function filterOrdersByStatus(orders, isPaid) {
   // 請實作此函式
+  return orders.filter(order => order.paid === isPaid);
 }
 
 /**
@@ -220,6 +276,18 @@ function filterOrdersByStatus(orders, isPaid) {
  */
 function generateOrderReport(orders) {
   // 請實作此函式
+  const totalOrders = orders.length;
+  const paidOrders = orders.filter(order => order.paid).length;
+  const unpaidOrders = totalOrders - paidOrders;
+  const totalRevenue = calculateTotalRevenue(orders);
+  const averageOrderValue = totalOrders > 0 ? Math.round(orders.reduce((sum, order) => sum + order.total, 0) / totalOrders) : 0;
+  return {
+    totalOrders,
+    paidOrders,
+    unpaidOrders,
+    totalRevenue,
+    averageOrderValue
+  };
 }
 
 /**
@@ -233,6 +301,16 @@ function generateOrderReport(orders) {
  */
 function groupOrdersByPayment(orders) {
   // 請實作此函式
+  return orders.reduce((acc, order) => {
+    const paymentMethod = order.user.payment; // 取得付款方式
+    // 如果該付款方式還沒有在 acc 中，先初始化為空陣列
+    if (!acc[paymentMethod]) {
+      acc[paymentMethod] = [];
+    }
+    // 將訂單加入對應的付款方式陣列中
+    acc[paymentMethod].push(order);
+    return acc;
+  }, {});
 }
 
 // ========================================
